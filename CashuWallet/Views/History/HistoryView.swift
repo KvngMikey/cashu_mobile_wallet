@@ -142,7 +142,7 @@ struct HistoryView: View {
                         sectionHeader("Cashu Requests")
                     VStack(spacing: 0) {
                         ForEach(Array(requestStore.requests.enumerated()), id: \.element.id) { index, request in
-                            cashuRequestRow(request: request)
+                            cashuRequestRow(request: request, staggerIndex: index)
                             if index < requestStore.requests.count - 1 {
                                 CanvasDivider()
                             }
@@ -284,12 +284,12 @@ struct HistoryView: View {
     /// These are suppressed from the timeline because the request row
     /// represents the same money event.
     private var requestClaimedTxIds: Set<String> {
-        Set(requestStore.requests.flatMap { $0.receivedPaymentIds })
+        Set(requestStore.requests.flatMap { $0.receivedPayments.map(\.transactionId) })
     }
 
     /// Sum of wallet-transaction amounts attached to this request.
     private func totalReceived(for request: CashuRequest) -> UInt64 {
-        let ids = Set(request.receivedPaymentIds)
+        let ids = Set(request.receivedPayments.map(\.transactionId))
         guard !ids.isEmpty else { return 0 }
         return walletManager.transactions
             .filter { ids.contains($0.id) }
@@ -324,8 +324,8 @@ struct HistoryView: View {
     private func matchesFilter(request: CashuRequest) -> Bool {
         switch filter {
         case .all:       return true
-        case .pending:   return request.receivedPaymentIds.isEmpty
-        case .completed: return !request.receivedPaymentIds.isEmpty
+        case .pending:   return request.receivedPayments.isEmpty
+        case .completed: return !request.receivedPayments.isEmpty
         }
     }
 
@@ -377,7 +377,7 @@ struct HistoryView: View {
     private func cashuRequestRow(request: CashuRequest, staggerIndex: Int) -> some View {
         let clampedIndex = min(staggerIndex, maxStaggerIndex)
         let delay = Double(clampedIndex) * staggerDelay
-        let isReceived = !request.receivedPaymentIds.isEmpty
+        let isReceived = !request.receivedPayments.isEmpty
         return Button {
             HapticFeedback.selection()
             selectedRequest = request

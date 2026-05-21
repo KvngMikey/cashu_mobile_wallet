@@ -721,7 +721,7 @@
 				CODE_SIGN_ENTITLEMENTS = CashuWallet/CashuWallet.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = JQ4WB222T4;
+				DEVELOPMENT_TEAM = D7AHD3GLH6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CashuWallet/Info.plist;
@@ -742,7 +742,7 @@
 					"-framework",
 					SystemConfiguration,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.cashu.wallet;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jcashu.wallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -758,7 +758,7 @@
 				CODE_SIGN_ENTITLEMENTS = CashuWallet/CashuWallet.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = JQ4WB222T4;
+				DEVELOPMENT_TEAM = D7AHD3GLH6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CashuWallet/Info.plist;
@@ -779,7 +779,7 @@
 					"-framework",
 					SystemConfiguration,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.cashu.wallet;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jcashu.wallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
