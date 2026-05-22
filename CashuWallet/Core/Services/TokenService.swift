@@ -65,6 +65,14 @@ class TokenService: ObservableObject {
             SpendingConditions.p2pk(pubkey: $0, conditions: nil)
         }
         
+        let p2pkSigningKeys: [SecretKey] = {
+            if let pubkey = normalizedP2PKPubkey,
+               let key = SettingsManager.shared.p2pkKeys.first(where: { normalizedP2PKForComparison($0.publicKey) == normalizedP2PKForComparison(pubkey) }) {
+                return [SecretKey(hex: key.privateKey)]
+            }
+            return []
+        }()
+        
         // Create SendOptions
         // Note: includeFee: false matches cashu.me default behavior
         let sendOptions = SendOptions(
@@ -75,7 +83,9 @@ class TokenService: ObservableObject {
             includeFee: false,
             useP2bk: false,
             maxProofs: nil,
-            metadata: [:]
+            metadata: [:],
+            p2pkSigningKeys: p2pkSigningKeys,
+            p2pkLockedProofSendMode: .swap
         )
         
         let prepared = try await wallet.prepareSend(
@@ -271,3 +281,4 @@ enum TokenServiceError: LocalizedError {
         }
     }
 }
+
