@@ -64,6 +64,43 @@ enum PaymentMethodKind: String, CaseIterable, Codable, Hashable {
         }
     }
 
+    /// Plain-language title for the receive method picker, in place of the
+    /// protocol jargon (`displayName`). Used by the method chip + picker sheet.
+    var friendlyTitle: String {
+        switch self {
+        case .bolt11:
+            return "Lightning invoice"
+        case .bolt12:
+            return "Reusable offer"
+        case .onchain:
+            return "On-chain address"
+        }
+    }
+
+    /// One-line descriptor shown beneath `friendlyTitle` in the picker sheet.
+    var friendlyDescriptor: String {
+        switch self {
+        case .bolt11:
+            return "One-time, instant"
+        case .bolt12:
+            return "Share once, paid many times"
+        case .onchain:
+            return "Slower, for larger amounts"
+        }
+    }
+
+    /// Verb-phrase for the create CTA, matching `friendlyTitle`'s language.
+    var createActionTitle: String {
+        switch self {
+        case .bolt11:
+            return "Create invoice"
+        case .bolt12:
+            return "Create offer"
+        case .onchain:
+            return "Create address"
+        }
+    }
+
     var sortOrder: Int {
         switch self {
         case .bolt11:
@@ -778,7 +815,22 @@ struct WalletTransaction: Identifiable {
 
         return status.displayText
     }
-    
+
+    /// Canonical row/detail title — kind-first, capitalized kind, lowercase
+    /// verb, parallel across all kinds (e.g. "Ecash received", "Lightning
+    /// paid"). Single source of truth for the History/Home rows and the
+    /// transaction detail nav title.
+    var displayTitle: String {
+        switch (kind, type) {
+        case (.ecash,     .incoming): return "Ecash received"
+        case (.ecash,     .outgoing): return "Ecash sent"
+        case (.lightning, .incoming): return "Lightning received"
+        case (.lightning, .outgoing): return "Lightning paid"
+        case (.onchain,   .incoming): return "Bitcoin received"
+        case (.onchain,   .outgoing): return "Bitcoin sent"
+        }
+    }
+
     enum TransactionType {
         case incoming   // Mint or receive
         case outgoing   // Send or melt

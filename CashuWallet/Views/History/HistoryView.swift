@@ -24,7 +24,6 @@ struct HistoryView: View {
     @State private var selectedTransaction: WalletTransaction?
     @State private var selectedRequest: CashuRequest?
     @State private var requestPendingDeletion: CashuRequest?
-    @State private var isCheckingStatus: String? = nil
     @State private var transactionUpdateRevision = 0
     @State private var hasAppearedOnce = false
 
@@ -58,7 +57,9 @@ struct HistoryView: View {
     private let maxStaggerIndex = 8
     private let staggerDelay: Double = 0.035
     private let rowHorizontalPadding: CGFloat = 4
-    private let rowVerticalPadding: CGFloat = 10
+    // Match MainWalletView's recent-list row metrics so spacing reads the
+    // same from Home → History (16pt vertical padding, 4pt title/time gap).
+    private let rowVerticalPadding: CGFloat = 16
 
     var body: some View {
         NavigationStack {
@@ -88,7 +89,7 @@ struct HistoryView: View {
                     .accessibilityValue(filter.label)
                 }
             }
-            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search history")
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search history")
             .onChange(of: filter) { _, _ in
                 visibleCount = pageStep
                 scrollResetToken &+= 1
@@ -101,9 +102,11 @@ struct HistoryView: View {
                 TransactionDetailView(transaction: transaction)
                     .environmentObject(walletManager)
             }
-            .navigationDestination(item: $selectedRequest) { request in
-                CashuRequestDetailView(request: request)
-                    .environmentObject(walletManager)
+            .sheet(item: $selectedRequest) { request in
+                NavigationStack {
+                    CashuRequestDetailView(request: request)
+                        .environmentObject(walletManager)
+                }
             }
             .confirmationDialog(
                 "Remove this Cashu Request from history?",
@@ -125,7 +128,11 @@ struct HistoryView: View {
                 Text("The QR and any pending payment routing stay valid; this only removes the row from your history.")
             }
             .task {
+                // Show the current ledger immediately, then quietly re-check
+                // pending mint quotes (throttled) so a paid BOLT12 offer lands
+                // in history just by opening the tab — no pull-to-refresh.
                 await walletManager.loadTransactions()
+                await walletManager.syncPendingMintQuotesIfStale()
             }
             .onReceive(NotificationCenter.default.publisher(for: .cashuTransactionsUpdated)) { _ in
                 transactionUpdateRevision += 1
@@ -138,30 +145,43 @@ struct HistoryView: View {
 
     private var historyList: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 0, pinnedViews: []) {
-                    ForEach(sectionsWithOffsets, id: \.group.title) { entry in
-                        sectionHeader(entry.group.title)
+            // A `List` (not a hand-built ScrollView) is what `.searchable` and
+            // `.refreshable` are designed to coordinate with — it owns the
+            // UISearchController/refresh-control plumbing, so the search bar no
+            // longer jumps during pull-to-refresh. Section headers stay as plain
+            // rows (not `Section` headers) to keep them non-pinned, and native
+            // separators are hidden in favor of our CanvasDivider.
+            List {
+                ForEach(sectionsWithOffsets, id: \.group.title) { entry in
+                    sectionHeader(entry.group.title)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
 
-                        ForEach(Array(entry.group.items.enumerated()), id: \.element.id) { index, item in
-                            let globalIndex = entry.startIndex + index
+                    ForEach(Array(entry.group.items.enumerated()), id: \.element.id) { index, item in
+                        let globalIndex = entry.startIndex + index
+                        VStack(spacing: 0) {
                             row(for: item, staggerIndex: globalIndex)
-                                .id(item.id)
-                                .onAppear {
-                                    if globalIndex >= visibleCount - prefetchLead {
-                                        extendWindow()
-                                    }
-                                }
 
                             if index < entry.group.items.count - 1 {
                                 CanvasDivider()
                             }
                         }
+                        .id(item.id)
+                        .onAppear {
+                            if globalIndex >= visibleCount - prefetchLead {
+                                extendWindow()
+                            }
+                        }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 32)
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .contentMargins(.bottom, 32, for: .scrollContent)
             .refreshable {
                 await walletManager.syncPendingMintQuotes()
                 await walletManager.checkAllPendingTokens()
@@ -377,10 +397,9 @@ struct HistoryView: View {
             selectedRequest = request
         } label: {
             HStack(spacing: 14) {
-                requestRowIcon(received: isReceived)
-                    .frame(width: 36, height: 36)
+                TransactionIcon(direction: .incoming)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Cashu Request")
                         .font(.body.weight(.medium))
                         .lineLimit(1)
@@ -418,13 +437,6 @@ struct HistoryView: View {
         }
     }
 
-    @ViewBuilder
-    private func requestRowIcon(received: Bool) -> some View {
-        EcashIcon()
-            .frame(width: 36, height: 36)
-    }
-
-
     // MARK: - Transaction Row
 
     private func transactionRow(transaction: WalletTransaction, staggerIndex: Int) -> some View {
@@ -438,7 +450,7 @@ struct HistoryView: View {
                 rowIcon(for: transaction)
                     .frame(width: 36, height: 36)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(rowTitle(for: transaction))
                         .font(.body.weight(.medium))
                         .lineLimit(1)
@@ -450,11 +462,7 @@ struct HistoryView: View {
 
                 Spacer(minLength: 8)
 
-                TransactionAmountColumn(
-                    transaction: transaction,
-                    isCheckingStatus: isCheckingStatus,
-                    onRefresh: { Task { await refreshPendingTransaction(transaction) } }
-                )
+                TransactionAmountColumn(transaction: transaction)
             }
             .padding(.horizontal, rowHorizontalPadding)
             .padding(.vertical, rowVerticalPadding)
@@ -473,33 +481,11 @@ struct HistoryView: View {
 
     @ViewBuilder
     private func rowIcon(for transaction: WalletTransaction) -> some View {
-        kindIcon(transaction.kind)
-            .frame(width: 36, height: 36)
-    }
-
-    @ViewBuilder
-    private func kindIcon(_ kind: WalletTransaction.TransactionKind) -> some View {
-        switch kind {
-        case .ecash:
-            EcashIcon()
-        case .lightning:
-            LightningIcon()
-        case .onchain:
-            Image(systemName: "bitcoinsign.circle.fill")
-                .font(.title3)
-                .foregroundStyle(.orange)
-        }
+        TransactionIcon(direction: transaction.type)
     }
 
     private func rowTitle(for transaction: WalletTransaction) -> String {
-        switch (transaction.kind, transaction.type) {
-        case (.ecash,     .incoming): return "Received ecash"
-        case (.ecash,     .outgoing): return "Sent ecash"
-        case (.lightning, .incoming): return "Lightning received"
-        case (.lightning, .outgoing): return "Lightning paid"
-        case (.onchain,   .incoming): return "Bitcoin received"
-        case (.onchain,   .outgoing): return "Bitcoin sent"
-        }
+        transaction.displayTitle
     }
 
     // MARK: - Formatting
@@ -549,31 +535,6 @@ struct HistoryView: View {
         let sameYear = calendar.component(.year, from: date) == calendar.component(.year, from: now)
         return (sameYear ? Self.sameYearDateFormatter : Self.otherYearDateFormatter).string(from: date)
     }
-
-    // MARK: - Actions
-
-    private func refreshPendingTransaction(_ transaction: WalletTransaction) async {
-        switch transaction.kind {
-        case .ecash:
-            await checkTransactionStatus(transaction)
-        case .lightning, .onchain:
-            isCheckingStatus = transaction.id
-            defer { isCheckingStatus = nil }
-            await walletManager.refreshPendingMintQuote(quoteId: transaction.id)
-        }
-    }
-
-    private func checkTransactionStatus(_ transaction: WalletTransaction) async {
-        guard let token = transaction.token else { return }
-        isCheckingStatus = transaction.id
-        defer { isCheckingStatus = nil }
-
-        let isSpent = await walletManager.checkTokenSpendable(token: token, mintUrl: transaction.mintUrl)
-        if isSpent {
-            await walletManager.markTokenAsClaimed(token: token)
-        }
-    }
-
 
 }
 

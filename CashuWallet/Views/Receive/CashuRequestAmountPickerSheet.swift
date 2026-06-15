@@ -18,40 +18,59 @@ struct CashuRequestAmountPickerSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                Spacer()
+        // Mirrors the app's other amount-entry surfaces (ReceiveLightningView's
+        // `amountEntryView`, SendView): amount centered between two flexible
+        // spacers, full-width keypad, action button directly beneath the keypad.
+        VStack(spacing: 0) {
+            header
 
-                CurrencyAmountDisplay(
-                    sats: UInt64(amountString) ?? 0,
-                    primary: $settings.amountDisplayPrimary
-                )
-                .accessibilityLabel("Request amount: \(amountString.isEmpty ? "0" : amountString) sats")
+            Spacer(minLength: 0)
 
-                Spacer()
+            CurrencyAmountDisplay(
+                sats: UInt64(amountString) ?? 0,
+                primary: $settings.amountDisplayPrimary,
+                primarySize: 56
+            )
+            .accessibilityLabel("Request amount: \(amountString.isEmpty ? "0" : amountString) sats")
+            .padding(.horizontal)
+            .frame(maxWidth: .infinity)
 
-                NumberPadAmountInput(amountString: $amountString)
-                    .padding(.horizontal, 24)
+            Spacer(minLength: 0)
 
-                Button(action: confirm) {
-                    Text("Done")
-                }
-                .glassButton()
-                .padding(.horizontal)
-                .padding(.top, 16)
-                .padding(.bottom, 16)
+            NumberPadAmountInput(amountString: $amountString)
+                .padding(.horizontal, 24)
+
+            Button(action: confirm) {
+                Text("Done")
             }
-            .navigationTitle("Amount")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark")
-                    }
-                    .accessibilityLabel("Close")
+            .glassButton()
+            .padding(.horizontal)
+            .padding(.top, 16)
+            .padding(.bottom, 16)
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var header: some View {
+        ZStack {
+            Text("Amount")
+                .font(.headline)
+
+            HStack {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .contentShape(Rectangle())
                 }
+                .accessibilityLabel("Close")
+
+                Spacer()
             }
         }
+        .padding(.horizontal)
+        .padding(.top, 12)
     }
 
     private func confirm() {

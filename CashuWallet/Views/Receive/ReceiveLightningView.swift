@@ -1,22 +1,6 @@
 import SwiftUI
 import CashuDevKit
 
-private enum Bolt12OfferAmountMode: String, CaseIterable, Identifiable {
-    case amountless
-    case fixedAmount
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .amountless:
-            return "Amountless"
-        case .fixedAmount:
-            return "Set Amount"
-        }
-    }
-}
-
 struct ReceiveLightningView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var walletManager: WalletManager
@@ -25,7 +9,9 @@ struct ReceiveLightningView: View {
 
     @State private var amountString = ""
     @State private var selectedMethod: PaymentMethodKind = .bolt11
-    @State private var bolt12OfferAmountMode: Bolt12OfferAmountMode = .amountless
+    /// BOLT12 only: when true the offer is amountless (sender chooses).
+    @State private var isAmountless = false
+    @State private var showMethodPicker = false
     @State private var mintQuote: MintQuoteInfo?
     @State private var isCreatingRequest = false
     @State private var isMinting = false
@@ -93,6 +79,17 @@ struct ReceiveLightningView: View {
                     .environmentObject(walletManager)
                     .presentationDetents([.medium])
             }
+            .sheet(isPresented: $showMethodPicker) {
+                MethodPickerSheet(
+                    selectedMethod: $selectedMethod,
+                    methods: availableMintMethods,
+                    onSelect: { method in
+                        // Amountless only applies to BOLT12 — never let it leak.
+                        if method != .bolt12 { isAmountless = false }
+                    }
+                )
+                .presentationDetents([.medium])
+            }
             .onAppear {
                 syncSelectedMethodWithActiveMint()
             }
@@ -102,6 +99,7 @@ struct ReceiveLightningView: View {
             .onChange(of: selectedMethod) {
                 errorMessage = nil
                 onchainObservation = nil
+                if selectedMethod != .bolt12 { isAmountless = false }
             }
             .onDisappear {
                 quoteStatusTask?.cancel()
@@ -138,16 +136,19 @@ struct ReceiveLightningView: View {
         }
     }
 
-    private var canCreateRequest: Bool {
-        if showsAmountEntry {
-            guard let amount = UInt64(amountString), amount > 0 else { return false }
-        }
-        return !isCreatingRequest
+    private var amountValue: UInt64? { UInt64(amountString) }
+
+    /// The one path that submits no amount: a BOLT12 offer with "Any amount" lit.
+    /// Everything else (BOLT11, on-chain, a BOLT12 offer with a typed amount)
+    /// requires a positive value.
+    private var isAmountlessOffer: Bool {
+        selectedMethod == .bolt12 && isAmountless
     }
 
-    private var showsAmountEntry: Bool {
-        selectedMethod.requiresMintAmount
-            || (selectedMethod.supportsOptionalMintAmount && bolt12OfferAmountMode == .fixedAmount)
+    private var canCreateRequest: Bool {
+        guard !isCreatingRequest else { return false }
+        if isAmountlessOffer { return true }
+        return (amountValue ?? 0) > 0
     }
 
     // MARK: - Amount Input View
@@ -161,24 +162,14 @@ struct ReceiveLightningView: View {
             }
 
             if shouldShowMethodPicker {
-                paymentMethodPicker
-                    .padding(.horizontal)
-                    .padding(.top, 12)
-            }
-
-            if selectedMethod.supportsOptionalMintAmount {
-                bolt12AmountModePicker
+                methodChip
                     .padding(.horizontal)
                     .padding(.top, 12)
             }
 
             Spacer()
 
-            if showsAmountEntry {
-                amountDisplaySection
-            } else {
-                amountlessOfferSection
-            }
+            amountHero
 
             if let error = errorMessage {
                 Text(error)
@@ -190,16 +181,18 @@ struct ReceiveLightningView: View {
 
             Spacer()
 
-            if showsAmountEntry {
-                NumberPadAmountInput(amountString: $amountString)
-                    .padding(.horizontal, 24)
-            }
+            NumberPadAmountInput(amountString: $amountString)
+                .padding(.horizontal, 24)
+                .onChange(of: amountString) { _, newValue in
+                    // Typing a digit takes over from the amountless offer.
+                    if isAmountless && !newValue.isEmpty { isAmountless = false }
+                }
 
             Button(action: createRequest) {
                 if isCreatingRequest {
                     ProgressView()
                 } else {
-                    Text("Create \(selectedMethod.requestDisplayName)")
+                    Text(selectedMethod.createActionTitle)
                 }
             }
             .glassButton()
@@ -210,95 +203,74 @@ struct ReceiveLightningView: View {
         }
     }
 
-    private var paymentMethodPicker: some View {
-        HStack(spacing: 8) {
-            ForEach(availableMintMethods, id: \.self) { method in
-                methodPill(method: method)
-            }
-        }
-        .padding(4)
-        .background(.thinMaterial, in: Capsule())
-        .accessibilityLabel("Payment method")
-    }
-
-    private func methodPill(method: PaymentMethodKind) -> some View {
-        let isSelected = selectedMethod == method
-        return Button(action: {
-            guard selectedMethod != method else { return }
+    /// Quiet, left-aligned menu trigger that opens the method picker sheet.
+    /// Replaces the old segmented pill bar — a Plain-Button affordance, not a
+    /// capsule, so it never reads as a tab.
+    private var methodChip: some View {
+        Button(action: {
             HapticFeedback.selection()
-            withAnimation(.snappy) { selectedMethod = method }
+            showMethodPicker = true
         }) {
-            Text(method.displayName)
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(
-                    Capsule().fill(isSelected ? Color.primary.opacity(0.12) : Color.clear)
-                )
-                .foregroundStyle(isSelected ? .primary : .secondary)
-                .contentShape(Capsule())
+            HStack(spacing: 4) {
+                Text(selectedMethod.friendlyTitle)
+                    .font(.subheadline.weight(.medium))
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+            }
+            .foregroundStyle(.secondary)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityLabel("Receive method: \(selectedMethod.friendlyTitle)")
+        .accessibilityHint("Opens the receive method picker")
     }
 
-    private var bolt12AmountModePicker: some View {
-        HStack(spacing: 8) {
-            ForEach(Bolt12OfferAmountMode.allCases) { mode in
-                bolt12ModePill(mode: mode)
-            }
-        }
-        .padding(4)
-        .background(.thinMaterial, in: Capsule())
-        .accessibilityLabel("BOLT12 offer amount mode")
-    }
-
-    private func bolt12ModePill(mode: Bolt12OfferAmountMode) -> some View {
-        let isSelected = bolt12OfferAmountMode == mode
-        return Button(action: {
-            guard bolt12OfferAmountMode != mode else { return }
-            HapticFeedback.selection()
-            withAnimation(.snappy) { bolt12OfferAmountMode = mode }
-        }) {
-            Text(mode.title)
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(
-                    Capsule().fill(isSelected ? Color.primary.opacity(0.12) : Color.clear)
-                )
-                .foregroundStyle(isSelected ? .primary : .secondary)
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var amountDisplaySection: some View {
-        CurrencyAmountDisplay(
-            sats: UInt64(amountString) ?? 0,
-            primary: $settings.amountDisplayPrimary
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Request amount: \(amountString.isEmpty ? "0" : amountString) sats")
-    }
-
-    private var amountlessOfferSection: some View {
+    private var amountHero: some View {
         VStack(spacing: 12) {
-            Image(systemName: "link.badge.plus")
-                .font(.largeTitle)
-                .foregroundStyle(Color.accentColor)
-                .accessibilityHidden(true)
+            CurrencyAmountDisplay(
+                sats: amountValue ?? 0,
+                primary: $settings.amountDisplayPrimary
+            )
+            .opacity(isAmountlessOffer ? 0.35 : 1)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Request amount: \(amountString.isEmpty ? "0" : amountString) sats")
 
-            Text("Amountless Offer")
-                .font(.title3.weight(.semibold))
-
-            Text("Sender sets amount")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+            if selectedMethod == .bolt12 {
+                anyAmountChip
+                    .transition(.opacity)
+            }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Amountless BOLT12 offer. The sender chooses the amount.")
+        .animation(.snappy, value: isAmountless)
+        .animation(.snappy, value: selectedMethod)
+    }
+
+    /// BOLT12-only toggle. Lit = the offer carries no amount (sender chooses).
+    /// Typing any digit clears it (handled in `amountInputView`).
+    private var anyAmountChip: some View {
+        Button(action: {
+            HapticFeedback.selection()
+            withAnimation(.snappy) {
+                isAmountless.toggle()
+                if isAmountless { amountString = "" }
+            }
+        }) {
+            Text("Any amount")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(isAmountless ? .primary : .secondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background {
+                    Capsule()
+                        .fill(.quaternary)
+                        .overlay(Capsule().fill(Color.primary.opacity(isAmountless ? 0.12 : 0)))
+                }
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Any amount")
+        .accessibilityHint("The sender chooses the amount")
+        .accessibilityAddTraits(isAmountless ? .isSelected : [])
     }
 
     // MARK: - Mint Selector
@@ -632,6 +604,7 @@ struct ReceiveLightningView: View {
     private func syncSelectedMethodWithActiveMint() {
         guard availableMintMethods.contains(selectedMethod) else {
             selectedMethod = availableMintMethods.first ?? .bolt11
+            isAmountless = false
             return
         }
     }
@@ -639,11 +612,12 @@ struct ReceiveLightningView: View {
     // MARK: - Actions
 
     private func createRequest() {
-        let amountValue = UInt64(amountString)
         let requestMethod = selectedMethod
-        let requestAmount = showsAmountEntry ? amountValue : nil
+        // Only a BOLT12 amountless offer submits no amount; BOLT11, on-chain,
+        // and a BOLT12 offer with a typed amount all require a positive value.
+        let requestAmount: UInt64? = isAmountlessOffer ? nil : amountValue
 
-        if showsAmountEntry, (amountValue ?? 0) == 0 {
+        if !isAmountlessOffer, (requestAmount ?? 0) == 0 {
             return
         }
 
@@ -808,9 +782,13 @@ struct ReceiveLightningView: View {
             case .pending:
                 return
             case .paid:
-                await mintQuoteIfReady(updatedQuote)
+                // Payment detected. Finish the UX immediately and mint in the
+                // background so a slow/transiently-failing mint never hangs the
+                // sheet (the balance credits a beat later).
+                await completeReceivedQuote(mintInBackground: true)
             case .issued:
-                await completeReceivedQuote(refreshWalletState: true)
+                // Mint already issued the ecash — just refresh + finish.
+                await completeReceivedQuote(mintInBackground: false)
             }
         } catch {
             // Ignore transient polling failures and keep monitoring.
@@ -844,10 +822,10 @@ struct ReceiveLightningView: View {
 
         do {
             let _ = try await walletManager.mintTokens(quoteId: quote.id)
-            await completeReceivedQuote(refreshWalletState: false)
+            await completeReceivedQuote(mintInBackground: false)
         } catch {
             if isAlreadyIssuedMintError(error) {
-                await completeReceivedQuote(refreshWalletState: true)
+                await completeReceivedQuote(mintInBackground: false)
                 return
             }
 
@@ -861,24 +839,35 @@ struct ReceiveLightningView: View {
         }
     }
 
+    /// Finish the receive UX as soon as the payment is *detected*. When
+    /// `mintInBackground` is true the quote is `.paid` but not yet minted: we
+    /// claim it in a detached task so a slow mint never holds the sheet open.
+    /// When false the ecash is already issued and we just refresh.
     @MainActor
-    private func completeReceivedQuote(refreshWalletState: Bool) async {
+    private func completeReceivedQuote(mintInBackground: Bool) async {
         guard !isPaid else { return }
 
         isPaid = true
         HapticFeedback.notification(.success)
-        quoteStatusTask?.cancel()
         expiryTimer?.invalidate()
 
-        if refreshWalletState {
-            await walletManager.refreshBalance()
-            await walletManager.loadTransactions()
+        let quoteId = mintQuote?.id
+
+        // Run the mint/refresh in an UNSTRUCTURED task that outlives this view
+        // and the (about-to-be-cancelled) poll task, so it completes after the
+        // sheet slides away.
+        if mintInBackground, let quoteId {
+            Task { await walletManager.claimPaidMintQuote(quoteId: quoteId) }
+        } else {
+            Task { @MainActor in
+                await walletManager.refreshBalance()
+                await walletManager.loadTransactions()
+            }
         }
 
         // Fire the home-screen toast (same notification the NPC mint flow
-        // posts from WalletManager). Without this the user lands on the
-        // home screen after dismiss with no confirmation that the mint
-        // succeeded.
+        // posts from WalletManager) so the user sees the receipt on the home
+        // screen after dismiss.
         if let amount = mintQuote?.amount {
             NotificationCenter.default.post(
                 name: .cashuTokenReceived,
@@ -887,9 +876,12 @@ struct ReceiveLightningView: View {
             )
         }
 
-        // Brief dwell so the user sees the "Payment Received!" badge flip
-        // before the sheet dismisses and the home-screen toast appears.
-        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        // Brief dwell so the user registers the "Payment Received!" badge, then
+        // auto-dismiss. Cancel the poll AFTER the dwell — this method runs
+        // inside `quoteStatusTask`, so cancelling first would abort the sleep
+        // and dismiss instantly. The mint finishes in the background.
+        try? await Task.sleep(nanoseconds: 1_200_000_000)
+        quoteStatusTask?.cancel()
         dismiss()
     }
 

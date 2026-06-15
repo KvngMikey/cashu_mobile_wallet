@@ -35,7 +35,14 @@ class WalletManager: ObservableObject {
     @Published var activeUnit: String = "sat"
 
     private var mintQuoteSyncsInFlight: Set<String> = []
-    
+
+    /// Throttle state for passive mint-quote syncs (opening History, app
+    /// foreground). Collapses overlapping triggers and rate-limits how often
+    /// we re-poll the mint so reusable BOLT12 offers don't hammer it.
+    private var isSyncingMintQuotes = false
+    private var lastMintQuoteSyncAt: Date?
+    private let mintQuoteSyncCooldown: TimeInterval = 45
+
     // MARK: - Services
 
     private let walletStore = WalletStore()
@@ -815,6 +822,23 @@ class WalletManager: ObservableObject {
         await loadTransactions()
         return amount
     }
+
+    /// Fire-and-forget: keep trying to mint a paid quote so a slow/transiently
+    /// failing mint never blocks the receive sheet. `mintTokens` already
+    /// refreshes balance + history on success, so the wallet credits the moment
+    /// it lands; `syncPendingMintQuotes()` (History pull-to-refresh) is the
+    /// ultimate backstop if all attempts here fail.
+    func claimPaidMintQuote(quoteId: String) async {
+        for _ in 0..<8 {
+            do {
+                _ = try await mintTokens(quoteId: quoteId)
+                return
+            } catch {
+                try? await Task.sleep(nanoseconds: 2_500_000_000)
+            }
+        }
+        AppLogger.wallet.error("claimPaidMintQuote: gave up minting \(quoteId, privacy: .public)")
+    }
     
     func createMeltQuote(
         request: String,
@@ -1051,10 +1075,12 @@ class WalletManager: ObservableObject {
             )
         }
 
+        var userInfo: [String: Any] = ["amount": amount, "source": "cashu-request"]
+        if let requestId { userInfo["requestId"] = requestId }
         NotificationCenter.default.post(
             name: .cashuTokenReceived,
             object: nil,
-            userInfo: ["amount": amount, "source": "cashu-request"]
+            userInfo: userInfo
         )
         return amount
     }
@@ -1150,18 +1176,28 @@ class WalletManager: ObservableObject {
         await loadTransactions()
     }
 
-    func refreshPendingMintQuote(quoteId: String) async {
-        let minted = await syncPendingMintQuote(
-            quoteId: quoteId,
-            allowPendingOnchainMintAttempt: true
-        )
-        if minted {
-            await refreshBalance()
+    /// Cooldown-gated sync for passive triggers (opening History, returning to
+    /// foreground). Skips when a sync ran within `mintQuoteSyncCooldown`, so a
+    /// paid offer settles on its own without re-polling the mint on every tab
+    /// switch. Pull-to-refresh calls `syncPendingMintQuotes()` directly to
+    /// bypass the cooldown (explicit user intent).
+    func syncPendingMintQuotesIfStale() async {
+        if let last = lastMintQuoteSyncAt,
+           Date().timeIntervalSince(last) < mintQuoteSyncCooldown {
+            return
         }
-        await loadTransactions()
+        await syncPendingMintQuotes()
     }
 
     func syncPendingMintQuotes() async {
+        // Coarse in-flight guard: collapse overlapping triggers (e.g. opening
+        // History while a foreground sync is already running) into one pass so
+        // the full per-quote loop never runs twice concurrently.
+        guard !isSyncingMintQuotes else { return }
+        isSyncingMintQuotes = true
+        lastMintQuoteSyncAt = Date()
+        defer { isSyncingMintQuotes = false }
+
         guard let db else {
             await loadTransactions()
             return

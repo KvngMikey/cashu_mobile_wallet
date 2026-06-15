@@ -22,7 +22,6 @@ struct MainWalletView: View {
     @State private var selectedTransaction: WalletTransaction?
     @State private var selectedRequest: CashuRequest?
     @State private var topInsetHeight: CGFloat = 0
-    @State private var isCheckingStatus: String? = nil
 
     private let recentRowCap = 5
     private let scrollFadeBand: CGFloat = 24
@@ -42,6 +41,10 @@ struct MainWalletView: View {
             }
             .scrollIndicators(.hidden)
             .mask(scrollFadeMask)
+            .refreshable {
+                await walletManager.syncPendingMintQuotes()
+                await walletManager.checkAllPendingTokens()
+            }
             .safeAreaInset(edge: .top, spacing: 0) {
                 fixedTopSection
                     .background(
@@ -73,9 +76,11 @@ struct MainWalletView: View {
                 TransactionDetailView(transaction: transaction)
                     .environmentObject(walletManager)
             }
-            .navigationDestination(item: $selectedRequest) { request in
-                CashuRequestDetailView(request: request)
-                    .environmentObject(walletManager)
+            .sheet(item: $selectedRequest) { request in
+                NavigationStack {
+                    CashuRequestDetailView(request: request)
+                        .environmentObject(walletManager)
+                }
             }
             .task { await walletManager.loadTransactions() }
         }
@@ -301,23 +306,62 @@ struct MainWalletView: View {
     // MARK: - Action Buttons (Receive + Send)
 
     /// Scan moved to the toolbar; the action row is a two-button pair.
-    /// Interactive glass lives inside `FullWidthCapsuleButtonStyle` (driven by
-    /// `configuration.isPressed`), so a single gesture owns each button — no
-    /// press-warp vs. tap-action conflict, hence no dropped first taps.
+    /// On iOS 26 these use Apple's native neutral Liquid Glass button style
+    /// (`.buttonStyle(.glass)`), wrapped in a `GlassEffectContainer` so the two
+    /// adjacent capsules sample light consistently. The native style owns its own
+    /// interactive press/morph, so a single gesture drives each button. iOS 18–25
+    /// falls back to the in-house `glassButton()` capsule.
+    @ViewBuilder
     private var actionButtons: some View {
-        HStack(spacing: 12) {
-            Button { activeSheet = .chooser(.receive) } label: {
-                Text("Receive")
-            }
-            .glassButton()
-            .accessibilityHint("Opens options to receive ecash or lightning payments")
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: 12) {
+                HStack(spacing: 12) {
+                    actionButton(
+                        "Receive",
+                        hint: "Opens options to receive ecash or lightning payments"
+                    ) { activeSheet = .chooser(.receive) }
 
-            Button { activeSheet = .chooser(.send) } label: {
-                Text("Send")
+                    actionButton(
+                        "Send",
+                        hint: "Opens options to send ecash or pay lightning invoices"
+                    ) { activeSheet = .chooser(.send) }
+                }
             }
-            .glassButton()
-            .accessibilityHint("Opens options to send ecash or pay lightning invoices")
+        } else {
+            HStack(spacing: 12) {
+                Button { activeSheet = .chooser(.receive) } label: {
+                    Text("Receive")
+                }
+                .glassButton()
+                .accessibilityHint("Opens options to receive ecash or lightning payments")
+
+                Button { activeSheet = .chooser(.send) } label: {
+                    Text("Send")
+                }
+                .glassButton()
+                .accessibilityHint("Opens options to send ecash or pay lightning invoices")
+            }
         }
+    }
+
+    /// A single home action button rendered with Apple's native neutral
+    /// Liquid Glass style, sized to fill half the action row.
+    @available(iOS 26, *)
+    private func actionButton(
+        _ title: String,
+        hint: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.body.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+        }
+        .buttonStyle(.glass)
+        .controlSize(.large)
+        .buttonBorderShape(.capsule)
+        .accessibilityHint(hint)
     }
 
     // MARK: - Recent Activity
@@ -445,11 +489,7 @@ struct MainWalletView: View {
 
                 Spacer(minLength: 8)
 
-                TransactionAmountColumn(
-                    transaction: transaction,
-                    isCheckingStatus: isCheckingStatus,
-                    onRefresh: { Task { await refreshPendingTransaction(transaction) } }
-                )
+                TransactionAmountColumn(transaction: transaction)
             }
             .padding(.horizontal, 4)
             .padding(.vertical, 16)
@@ -463,33 +503,11 @@ struct MainWalletView: View {
 
     @ViewBuilder
     private func rowIcon(for transaction: WalletTransaction) -> some View {
-        kindIcon(transaction.kind)
-            .frame(width: 36, height: 36)
-    }
-
-    @ViewBuilder
-    private func kindIcon(_ kind: WalletTransaction.TransactionKind) -> some View {
-        switch kind {
-        case .ecash:
-            EcashIcon()
-        case .lightning:
-            LightningIcon()
-        case .onchain:
-            Image(systemName: "bitcoinsign.circle.fill")
-                .font(.title3)
-                .foregroundStyle(.orange)
-        }
+        TransactionIcon(direction: transaction.type)
     }
 
     private func rowTitle(for transaction: WalletTransaction) -> String {
-        switch (transaction.kind, transaction.type) {
-        case (.ecash,     .incoming): return "Received ecash"
-        case (.ecash,     .outgoing): return "Sent ecash"
-        case (.lightning, .incoming): return "Lightning received"
-        case (.lightning, .outgoing): return "Lightning paid"
-        case (.onchain,   .incoming): return "Bitcoin received"
-        case (.onchain,   .outgoing): return "Bitcoin sent"
-        }
+        transaction.displayTitle
     }
 
     private func formatAmount(_ transaction: WalletTransaction) -> String {
@@ -506,8 +524,7 @@ struct MainWalletView: View {
             selectedRequest = request
         } label: {
             HStack(spacing: 14) {
-                EcashIcon()
-                    .frame(width: 36, height: 36)
+                TransactionIcon(direction: .incoming)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Cashu Request")
@@ -586,31 +603,6 @@ struct MainWalletView: View {
         return (sameYear ? Self.sameYearDateFormatter : Self.otherYearDateFormatter).string(from: date)
     }
 
-    // MARK: - Refresh pending transactions
-    // Mirror of HistoryView so behavior matches across surfaces.
-
-    private func refreshPendingTransaction(_ transaction: WalletTransaction) async {
-        switch transaction.kind {
-        case .ecash:
-            await checkTransactionStatus(transaction)
-        case .lightning, .onchain:
-            isCheckingStatus = transaction.id
-            defer { isCheckingStatus = nil }
-            await walletManager.refreshPendingMintQuote(quoteId: transaction.id)
-        }
-    }
-
-    private func checkTransactionStatus(_ transaction: WalletTransaction) async {
-        guard let token = transaction.token else { return }
-        isCheckingStatus = transaction.id
-        defer { isCheckingStatus = nil }
-
-        let isSpent = await walletManager.checkTokenSpendable(token: token, mintUrl: transaction.mintUrl)
-        if isSpent {
-            await walletManager.markTokenAsClaimed(token: token)
-        }
-    }
-
     // MARK: - Helpers
 
     private func formatBalanceWithUnit(_ sats: UInt64) -> String {
@@ -625,7 +617,6 @@ struct MainWalletView: View {
             WalletActionSheetView(
                 action: action,
                 onClose: { activeSheet = nil },
-                onScan: { activeSheet = .scanner },
                 onSelect: { flow in
                     if case .contactlessPay = flow {
                         activeSheet = nil
@@ -768,7 +759,6 @@ private enum WalletSheet: Identifiable {
 private struct WalletActionSheetView: View {
     let action: WalletActionSheet
     let onClose: () -> Void
-    let onScan: () -> Void
     let onSelect: (WalletFlow) -> Void
 
     @State private var revealed = false
@@ -822,13 +812,6 @@ private struct WalletActionSheetView: View {
                         Image(systemName: "xmark")
                     }
                     .accessibilityLabel("Close")
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: onScan) {
-                        Image(systemName: "viewfinder")
-                    }
-                    .accessibilityLabel("Scan")
                 }
             }
         }
