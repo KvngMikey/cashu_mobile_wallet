@@ -68,25 +68,6 @@
 		CC00000000000007 /* AdvancedSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000017 /* AdvancedSettingsSection.swift */; };
 		CC00000000000008 /* LightningAddressSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000018 /* LightningAddressSettingsSection.swift */; };
 		CC00000000000020 /* PressableButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000021 /* PressableButtonStyle.swift */; };
-		DD00000000000001 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000011 /* AppLogger.swift */; };
-		DD00000000000002 /* BIP39WordList.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000012 /* BIP39WordList.swift */; };
-		DD00000000000003 /* HapticFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000013 /* HapticFeedback.swift */; };
-		DD00000000000004 /* ErrorBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000014 /* ErrorBannerView.swift */; };
-		EE00000000000002 /* WalletStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000012 /* WalletStore.swift */; };
-		EE00000000000003 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000013 /* SettingsStore.swift */; };
-		EE00000000000004 /* TokenParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000014 /* TokenParser.swift */; };
-		EE00000000000005 /* AmountFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000015 /* AmountFormatter.swift */; };
-		EE00000000000006 /* LightningRequestParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000016 /* LightningRequestParser.swift */; };
-		F100000000000001 /* NDEFTextRecordCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200000000000001 /* NDEFTextRecordCoder.swift */; };
-		F100000000000002 /* NFCReaderDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200000000000002 /* NFCReaderDelegate.swift */; };
-		F100000000000003 /* NFCPaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200000000000003 /* NFCPaymentService.swift */; };
-		F100000000000004 /* ContactlessPaymentCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200000000000004 /* ContactlessPaymentCoordinator.swift */; };
-		F300000000000001 /* CurrencyAmountDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000001 /* CurrencyAmountDisplay.swift */; };
-		F300000000000002 /* NumberPadAmountInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000002 /* NumberPadAmountInput.swift */; };
-		F300000000000003 /* AuthorizingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000003 /* AuthorizingOverlay.swift */; };
-		F300000000000004 /* ClipboardPaymentChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000004 /* ClipboardPaymentChip.swift */; };
-		F300000000000005 /* RecentRecipientsList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000005 /* RecentRecipientsList.swift */; };
-		F300000000000006 /* PaymentRequestDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000006 /* PaymentRequestDecoder.swift */; };
 		D200000000000101 /* WalletManager+Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000000000101 /* WalletManager+Lifecycle.swift */; };
 		D200000000000102 /* WalletManager+NPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000000000102 /* WalletManager+NPC.swift */; };
 		D200000000000103 /* WalletManager+Mints.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000000000103 /* WalletManager+Mints.swift */; };
@@ -108,6 +89,25 @@
 		D200000000000210 /* RestoreMintResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000000000210 /* RestoreMintResult.swift */; };
 		D200000000000211 /* TokenInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000000000211 /* TokenInfo.swift */; };
 		D200000000000212 /* Data+Hashing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D100000000000212 /* Data+Hashing.swift */; };
+		DD00000000000001 /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000011 /* AppLogger.swift */; };
+		DD00000000000002 /* BIP39WordList.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000012 /* BIP39WordList.swift */; };
+		DD00000000000003 /* HapticFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000013 /* HapticFeedback.swift */; };
+		DD00000000000004 /* ErrorBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD00000000000014 /* ErrorBannerView.swift */; };
+		EE00000000000002 /* WalletStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000012 /* WalletStore.swift */; };
+		EE00000000000003 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000013 /* SettingsStore.swift */; };
+		EE00000000000004 /* TokenParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000014 /* TokenParser.swift */; };
+		EE00000000000005 /* AmountFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000015 /* AmountFormatter.swift */; };
+		EE00000000000006 /* LightningRequestParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000016 /* LightningRequestParser.swift */; };
+		F100000000000001 /* NDEFTextRecordCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200000000000001 /* NDEFTextRecordCoder.swift */; };
+		F100000000000002 /* NFCReaderDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200000000000002 /* NFCReaderDelegate.swift */; };
+		F100000000000003 /* NFCPaymentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200000000000003 /* NFCPaymentService.swift */; };
+		F100000000000004 /* ContactlessPaymentCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200000000000004 /* ContactlessPaymentCoordinator.swift */; };
+		F300000000000001 /* CurrencyAmountDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000001 /* CurrencyAmountDisplay.swift */; };
+		F300000000000002 /* NumberPadAmountInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000002 /* NumberPadAmountInput.swift */; };
+		F300000000000003 /* AuthorizingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000003 /* AuthorizingOverlay.swift */; };
+		F300000000000004 /* ClipboardPaymentChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000004 /* ClipboardPaymentChip.swift */; };
+		F300000000000005 /* RecentRecipientsList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000005 /* RecentRecipientsList.swift */; };
+		F300000000000006 /* PaymentRequestDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F400000000000006 /* PaymentRequestDecoder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -170,6 +170,27 @@
 		CC00000000000017 /* AdvancedSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsSection.swift; sourceTree = "<group>"; };
 		CC00000000000018 /* LightningAddressSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightningAddressSettingsSection.swift; sourceTree = "<group>"; };
 		CC00000000000021 /* PressableButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PressableButtonStyle.swift; sourceTree = "<group>"; };
+		D100000000000101 /* WalletManager+Lifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletManager+Lifecycle.swift"; sourceTree = "<group>"; };
+		D100000000000102 /* WalletManager+NPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletManager+NPC.swift"; sourceTree = "<group>"; };
+		D100000000000103 /* WalletManager+Mints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletManager+Mints.swift"; sourceTree = "<group>"; };
+		D100000000000104 /* WalletManager+Lightning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletManager+Lightning.swift"; sourceTree = "<group>"; };
+		D100000000000105 /* WalletManager+CashuPaymentRequests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletManager+CashuPaymentRequests.swift"; sourceTree = "<group>"; };
+		D100000000000106 /* WalletManager+Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletManager+Tokens.swift"; sourceTree = "<group>"; };
+		D100000000000107 /* WalletManager+MintQuoteSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletManager+MintQuoteSync.swift"; sourceTree = "<group>"; };
+		D100000000000108 /* WalletManager+Backup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WalletManager+Backup.swift"; sourceTree = "<group>"; };
+		D100000000000109 /* WalletErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletErrors.swift; sourceTree = "<group>"; };
+		D100000000000201 /* PaymentMethodKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodKind.swift; sourceTree = "<group>"; };
+		D100000000000202 /* PaymentRequestParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRequestParser.swift; sourceTree = "<group>"; };
+		D100000000000203 /* OnchainExplorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnchainExplorer.swift; sourceTree = "<group>"; };
+		D100000000000204 /* MintInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MintInfo.swift; sourceTree = "<group>"; };
+		D100000000000205 /* WalletNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletNotifications.swift; sourceTree = "<group>"; };
+		D100000000000206 /* QuoteModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuoteModels.swift; sourceTree = "<group>"; };
+		D100000000000207 /* QuoteStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuoteStates.swift; sourceTree = "<group>"; };
+		D100000000000208 /* WalletTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletTransaction.swift; sourceTree = "<group>"; };
+		D100000000000209 /* TokenTransferModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenTransferModels.swift; sourceTree = "<group>"; };
+		D100000000000210 /* RestoreMintResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreMintResult.swift; sourceTree = "<group>"; };
+		D100000000000211 /* TokenInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenInfo.swift; sourceTree = "<group>"; };
+		D100000000000212 /* Data+Hashing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+Hashing.swift"; sourceTree = "<group>"; };
 		DD00000000000011 /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		DD00000000000012 /* BIP39WordList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BIP39WordList.swift; sourceTree = "<group>"; };
 		DD00000000000013 /* HapticFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedback.swift; sourceTree = "<group>"; };
@@ -190,27 +211,6 @@
 		F400000000000004 /* ClipboardPaymentChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardPaymentChip.swift; sourceTree = "<group>"; };
 		F400000000000005 /* RecentRecipientsList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentRecipientsList.swift; sourceTree = "<group>"; };
 		F400000000000006 /* PaymentRequestDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRequestDecoder.swift; sourceTree = "<group>"; };
-		D100000000000101 /* WalletManager+Lifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletManager+Lifecycle.swift; sourceTree = "<group>"; };
-		D100000000000102 /* WalletManager+NPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletManager+NPC.swift; sourceTree = "<group>"; };
-		D100000000000103 /* WalletManager+Mints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletManager+Mints.swift; sourceTree = "<group>"; };
-		D100000000000104 /* WalletManager+Lightning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletManager+Lightning.swift; sourceTree = "<group>"; };
-		D100000000000105 /* WalletManager+CashuPaymentRequests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletManager+CashuPaymentRequests.swift; sourceTree = "<group>"; };
-		D100000000000106 /* WalletManager+Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletManager+Tokens.swift; sourceTree = "<group>"; };
-		D100000000000107 /* WalletManager+MintQuoteSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletManager+MintQuoteSync.swift; sourceTree = "<group>"; };
-		D100000000000108 /* WalletManager+Backup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletManager+Backup.swift; sourceTree = "<group>"; };
-		D100000000000109 /* WalletErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletErrors.swift; sourceTree = "<group>"; };
-		D100000000000201 /* PaymentMethodKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentMethodKind.swift; sourceTree = "<group>"; };
-		D100000000000202 /* PaymentRequestParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentRequestParser.swift; sourceTree = "<group>"; };
-		D100000000000203 /* OnchainExplorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnchainExplorer.swift; sourceTree = "<group>"; };
-		D100000000000204 /* MintInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MintInfo.swift; sourceTree = "<group>"; };
-		D100000000000205 /* WalletNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletNotifications.swift; sourceTree = "<group>"; };
-		D100000000000206 /* QuoteModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuoteModels.swift; sourceTree = "<group>"; };
-		D100000000000207 /* QuoteStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuoteStates.swift; sourceTree = "<group>"; };
-		D100000000000208 /* WalletTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletTransaction.swift; sourceTree = "<group>"; };
-		D100000000000209 /* TokenTransferModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenTransferModels.swift; sourceTree = "<group>"; };
-		D100000000000210 /* RestoreMintResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestoreMintResult.swift; sourceTree = "<group>"; };
-		D100000000000211 /* TokenInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenInfo.swift; sourceTree = "<group>"; };
-		D100000000000212 /* Data+Hashing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data+Hashing.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -459,18 +459,6 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
-		F500000000000001 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				F400000000000001 /* CurrencyAmountDisplay.swift */,
-				F400000000000002 /* NumberPadAmountInput.swift */,
-				F400000000000003 /* AuthorizingOverlay.swift */,
-				F400000000000004 /* ClipboardPaymentChip.swift */,
-				F400000000000005 /* RecentRecipientsList.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
 		D300000000000101 /* Wallet */ = {
 			isa = PBXGroup;
 			children = (
@@ -555,6 +543,18 @@
 				D100000000000210 /* RestoreMintResult.swift */,
 			);
 			path = WalletSupport;
+			sourceTree = "<group>";
+		};
+		F500000000000001 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				F400000000000001 /* CurrencyAmountDisplay.swift */,
+				F400000000000002 /* NumberPadAmountInput.swift */,
+				F400000000000003 /* AuthorizingOverlay.swift */,
+				F400000000000004 /* ClipboardPaymentChip.swift */,
+				F400000000000005 /* RecentRecipientsList.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -873,7 +873,7 @@
 				CODE_SIGN_ENTITLEMENTS = CashuWallet/CashuWallet.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = JQ4WB222T4;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CashuWallet/Info.plist;
@@ -895,7 +895,7 @@
 					"-framework",
 					SystemConfiguration,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.cashu.wallet;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gcashu.wallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -911,7 +911,7 @@
 				CODE_SIGN_ENTITLEMENTS = CashuWallet/CashuWallet.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = JQ4WB222T4;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CashuWallet/Info.plist;
@@ -933,7 +933,7 @@
 					"-framework",
 					SystemConfiguration,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.cashu.wallet;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gcashu.wallet;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
