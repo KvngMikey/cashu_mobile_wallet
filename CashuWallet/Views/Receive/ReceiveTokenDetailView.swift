@@ -1,14 +1,12 @@
 import SwiftUI
-import Cdk
 
 struct ReceiveTokenDetailView: View {
     let tokenString: String
-    var onComplete: (() -> Void)? = nil
+    let onComplete: (() -> Void)?
     @EnvironmentObject var walletManager: WalletManager
     @Environment(\.dismiss) var dismiss
     @ObservedObject private var settings = SettingsManager.shared
 
-    @State private var decodedToken: Token?
     @State private var tokenAmount: UInt64 = 0
     @State private var receiveFee: UInt64 = 0
     @State private var mintUrl: String = ""
@@ -104,9 +102,14 @@ struct ReceiveTokenDetailView: View {
                 }
             }
         }
-        .onAppear {
-            parseToken()
+        .task(id: tokenString) {
+            await loadTokenPreview()
         }
+    }
+
+    init(tokenString: String, onComplete: (() -> Void)? = nil) {
+        self.tokenString = tokenString
+        self.onComplete = onComplete
     }
 
     private var newMintBadge: some View {
@@ -180,19 +183,20 @@ struct ReceiveTokenDetailView: View {
 
     // MARK: - Actions
 
-    func parseToken() {
-        do {
-            let token = try walletManager.decodeToken(tokenString: tokenString)
-            self.decodedToken = token
-            // Token.value() is the canonical "total value of the token" API;
-            // proofsSimple() is documented as "simplified - no keyset filtering"
-            // and returns 0 / empty for some token formats.
-            self.tokenAmount = try token.value().value
-            let mint = try token.mintUrl()
-            self.mintUrl = mint.url
-            self.mintIsKnown = walletManager.isMintKnown(url: mint.url)
+    @MainActor
+    private func loadTokenPreview() async {
+        isLoadingFee = true
+        errorMessage = nil
 
-            let tokenP2PKPubkeys = token.p2pkPubkeys()
+        do {
+            let preview = try await CdkRuntime.shared.tokenPreview(from: tokenString)
+            guard !Task.isCancelled else { return }
+
+            self.tokenAmount = preview.amount
+            self.mintUrl = preview.mintUrl
+            self.mintIsKnown = walletManager.isMintKnown(url: preview.mintUrl)
+
+            let tokenP2PKPubkeys = preview.p2pkPubkeys
             self.p2pkPubkeys = tokenP2PKPubkeys
             let hasMatch = tokenP2PKPubkeys.contains { settings.isKnownP2PKPublicKey($0) }
             self.tokenLockedToKnownKey = tokenP2PKPubkeys.isEmpty || hasMatch
@@ -200,25 +204,25 @@ struct ReceiveTokenDetailView: View {
                 errorMessage = "This ecash is locked to a key you don't hold. Ask the sender to lock it to your key instead."
             }
 
-            Task { await calculateFee() }
+            await calculateFee()
         } catch {
+            guard !Task.isCancelled else { return }
             errorMessage = "Invalid token. \(error.userFacingWalletMessage)"
             isLoadingFee = false
         }
     }
 
-    func calculateFee() async {
+    @MainActor
+    private func calculateFee() async {
         do {
             let fee = try await walletManager.calculateReceiveFee(tokenString: tokenString)
-            await MainActor.run {
-                self.receiveFee = fee
-                self.isLoadingFee = false
-            }
+            guard !Task.isCancelled else { return }
+            self.receiveFee = fee
+            self.isLoadingFee = false
         } catch {
-            await MainActor.run {
-                self.receiveFee = 0
-                self.isLoadingFee = false
-            }
+            guard !Task.isCancelled else { return }
+            self.receiveFee = 0
+            self.isLoadingFee = false
         }
     }
 
