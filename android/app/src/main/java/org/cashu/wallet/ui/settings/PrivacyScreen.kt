@@ -119,6 +119,14 @@ fun PrivacyScreen(
                 onCheckedChange = settingsManager::setAutoPasteEcashReceive,
             )
 
+            SectionHeader("Diagnostics")
+            ToggleRow(
+                title = "Send anonymous crash reports",
+                subtitle = "Helps improve the app. No personal data, wallet addresses, or amounts are ever sent.",
+                checked = settings.sentryEnabled,
+                onCheckedChange = settingsManager::setSentryEnabled,
+            )
+
             SectionHeader("Fiat")
             ToggleRow(
                 title = "Show fiat balance",
